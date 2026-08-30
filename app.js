@@ -4,10 +4,13 @@
 
   const cfg = window.APP_CONFIG || {};
   const TABLE = "milestones";
+  const LINKS_TABLE = "links";
   let sb = null;
   let editing = false;
   let items = [];          // milestones from DB
-  let editingId = null;    // id being edited in modal (null = new)
+  let links = [];          // quick links from DB
+  let editingId = null;    // milestone id being edited (null = new)
+  let editingLinkId = null;// link id being edited (null = new)
   let demo = false;        // true when Supabase not configured
 
   const $ = (id) => document.getElementById(id);
@@ -21,6 +24,11 @@
     { id: 5, position: 5, event_date: "2026-09-08", title: "Tập huấn cán bộ coi thi", progress: 0, is_exam: false },
     { id: 6, position: 6, event_date: "2026-09-09", title: "Rà soát danh sách thí sinh", progress: 0, is_exam: false },
     { id: 7, position: 99, event_date: "2026-09-10", title: "Tổ chức kỳ thi chính thức", progress: 0, is_exam: true },
+  ];
+  const DEMO_LINKS = [
+    { id: 1, position: 1, label: "Danh sách thí sinh", url: "https://docs.google.com/spreadsheets" },
+    { id: 2, position: 2, label: "Phân công cán bộ", url: "https://docs.google.com/spreadsheets" },
+    { id: 3, position: 3, label: "Sơ đồ phòng máy", url: "https://drive.google.com" },
   ];
 
   // ---------------- Init ----------------
@@ -47,17 +55,24 @@
 
     bindUI();
     load();
+    loadLinks();
   }
 
   function bindUI() {
     $("btnEdit").addEventListener("click", toggleEdit);
     $("btnAdd").addEventListener("click", () => openModal(null));
-    $("btnRefresh").addEventListener("click", load);
+    $("btnRefresh").addEventListener("click", () => { load(); loadLinks(); });
     $("btnCancel").addEventListener("click", closeModal);
     $("modalBg").addEventListener("click", (e) => { if (e.target === $("modalBg")) closeModal(); });
     $("btnSave").addEventListener("click", saveModal);
     $("btnDelete").addEventListener("click", deleteItem);
     $("fProg").addEventListener("input", (e) => { $("fProgOut").textContent = e.target.value + "%"; });
+    // Links
+    $("btnAddLink").addEventListener("click", () => openLinkModal(null));
+    $("btnCancelLink").addEventListener("click", closeLinkModal);
+    $("linkModalBg").addEventListener("click", (e) => { if (e.target === $("linkModalBg")) closeLinkModal(); });
+    $("btnSaveLink").addEventListener("click", saveLinkModal);
+    $("btnDeleteLink").addEventListener("click", deleteLink);
   }
 
   function setStatus(msg) {
@@ -80,8 +95,75 @@
     try {
       sb.channel("ms-changes")
         .on("postgres_changes", { event: "*", schema: "public", table: TABLE }, () => load())
+        .on("postgres_changes", { event: "*", schema: "public", table: LINKS_TABLE }, () => loadLinks())
         .subscribe();
     } catch (e) { /* realtime optional */ }
+  }
+
+  // ---------------- Quick links ----------------
+  async function loadLinks() {
+    if (demo) { links = DEMO_LINKS.slice(); renderLinks(); return; }
+    const { data, error } = await sb.from(LINKS_TABLE).select("*").order("position", { ascending: true });
+    if (error) { console.warn("links:", error.message); links = []; }
+    else links = data || [];
+    renderLinks();
+  }
+
+  function renderLinks() {
+    const box = $("quicklinks");
+    if (!links.length) {
+      box.innerHTML = '<span class="empty-links">Chưa có link. Bật Chỉnh sửa → “➕ Thêm link”.</span>';
+      return;
+    }
+    box.innerHTML = links.map(l => `
+      <span class="chip-wrap" style="display:inline-flex">
+        <a class="chip" href="${esc(l.url)}" target="_blank" rel="noopener">
+          <span class="ic">📄</span>${esc(l.label || l.url)}
+          <button class="edit" data-editlink="${l.id}" title="Sửa">✏️</button>
+        </a>
+      </span>`).join("");
+    box.querySelectorAll("[data-editlink]").forEach(b =>
+      b.addEventListener("click", (e) => { e.preventDefault(); openLinkModal(Number(b.getAttribute("data-editlink"))); }));
+  }
+
+  function openLinkModal(id) {
+    editingLinkId = id;
+    const l = id != null ? links.find(x => x.id === id) : null;
+    $("linkModalTitle").textContent = l ? "Sửa liên kết" : "Thêm liên kết";
+    $("lName").value = l ? (l.label || "") : "";
+    $("lUrl").value = l ? (l.url || "") : "";
+    $("btnDeleteLink").style.display = l ? "inline-flex" : "none";
+    $("linkModalBg").classList.add("open");
+  }
+  function closeLinkModal() { $("linkModalBg").classList.remove("open"); editingLinkId = null; }
+
+  async function saveLinkModal() {
+    let url = $("lUrl").value.trim();
+    const label = $("lName").value.trim();
+    if (!url) { alert("Nhập đường dẫn (URL)."); return; }
+    if (!/^https?:\/\//i.test(url)) url = "https://" + url;
+    const rec = { label: label || url, url };
+
+    if (demo) {
+      if (editingLinkId != null) Object.assign(links.find(x => x.id === editingLinkId), rec);
+      else links.push(Object.assign({ id: Date.now(), position: links.length + 1 }, rec));
+      closeLinkModal(); renderLinks(); return;
+    }
+    setStatus("Đang lưu link…");
+    let res;
+    if (editingLinkId != null) res = await sb.from(LINKS_TABLE).update(rec).eq("id", editingLinkId);
+    else { rec.position = links.reduce((m, x) => Math.max(m, x.position || 0), 0) + 1; res = await sb.from(LINKS_TABLE).insert(rec); }
+    if (res.error) { setStatus("Lỗi lưu link: " + res.error.message); alert("Lỗi: " + res.error.message); return; }
+    closeLinkModal(); await loadLinks(); setStatus("Đã lưu link ✓");
+  }
+
+  async function deleteLink() {
+    if (editingLinkId == null) return;
+    if (!confirm("Xóa link này?")) return;
+    if (demo) { links = links.filter(x => x.id !== editingLinkId); closeLinkModal(); renderLinks(); return; }
+    const { error } = await sb.from(LINKS_TABLE).delete().eq("id", editingLinkId);
+    if (error) { setStatus("Lỗi xóa link: " + error.message); return; }
+    closeLinkModal(); await loadLinks(); setStatus("Đã xóa link ✓");
   }
 
   // ---------------- Render ----------------
@@ -192,6 +274,7 @@
     }
     document.body.classList.toggle("editing", editing);
     $("btnAdd").style.display = editing ? "inline-flex" : "none";
+    $("btnAddLink").style.display = editing ? "inline-flex" : "none";
     $("btnEdit").textContent = editing ? "✔️ Xong" : "✏️ Chỉnh sửa";
     $("btnEdit").classList.toggle("green", !editing);
   }
