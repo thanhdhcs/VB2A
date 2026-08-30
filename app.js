@@ -16,7 +16,7 @@
   const DEMO_DATA = [
     { id: 1, position: 1, event_date: "2026-09-01", title: "Họp triển khai, phân công nhiệm vụ", progress: 100, is_exam: false },
     { id: 2, position: 2, event_date: "2026-09-05", title: "Mời PA06 quét an ninh", progress: 100, is_exam: false },
-    { id: 3, position: 3, event_date: "2026-09-06", title: "Thử tải hệ thống (mới có 20% công việc)", progress: 20, is_exam: false },
+    { id: 3, position: 3, event_date: "2026-09-06", title: "Thử tải hệ thống (mới có 20% công việc)", progress: 20, is_exam: false, note: "Phụ trách: Tuấn. Cần kiểm tra tải 550 máy đồng thời, ghi lại thời gian phản hồi." },
     { id: 4, position: 4, event_date: "2026-09-06", title: "Chuẩn bị phòng máy, thiết bị dự phòng", progress: 0, is_exam: false },
     { id: 5, position: 5, event_date: "2026-09-08", title: "Tập huấn cán bộ coi thi", progress: 0, is_exam: false },
     { id: 6, position: 6, event_date: "2026-09-09", title: "Rà soát danh sách thí sinh", progress: 0, is_exam: false },
@@ -145,6 +145,7 @@
           <div class="card">
             <div class="date">📅 ${esc(fmtDate(m.event_date))}</div>
             <div class="title">${esc(m.title)}</div>
+            ${m.note ? `<div class="note"><b>📝 Note:</b> ${esc(m.note)}</div>` : ""}
             <div class="pbar"><i style="width:${Math.max(0, Math.min(100, m.progress))}%"></i></div>
             <div class="prow">
               <span class="badge">${statusText(m)}</span>
@@ -164,6 +165,7 @@
           <div class="card">
             <div class="date">📅 ${esc(fmtDate(exam.event_date))}</div>
             <div class="title">🎯 NGÀY THI — ${esc(exam.title || "Tổ chức kỳ thi")}</div>
+            ${exam.note ? `<div class="note" style="background:rgba(255,255,255,.18);border-left-color:#ffd7cf;color:#fff">${esc(exam.note)}</div>` : ""}
             <div class="count">${$("examCountdown").textContent} còn lại</div>
             <div class="edit-actions" style="justify-content:center">
               <button class="btn ghost small" data-edit="${exam.id}">✏️ Sửa</button>
@@ -201,6 +203,7 @@
     $("modalTitle").textContent = m ? "Sửa mốc công việc" : "Thêm mốc mới";
     $("fDate").value = m ? (m.event_date || "") : "";
     $("fTitle").value = m ? (m.title || "") : "";
+    $("fNote").value = m ? (m.note || "") : "";
     $("fProg").value = m ? (m.progress || 0) : 0;
     $("fProgOut").textContent = ($("fProg").value) + "%";
     $("fExam").checked = m ? !!m.is_exam : false;
@@ -213,6 +216,7 @@
     const rec = {
       event_date: $("fDate").value || null,
       title: $("fTitle").value.trim(),
+      note: $("fNote").value.trim() || null,
       progress: Math.max(0, Math.min(100, parseInt($("fProg").value, 10) || 0)),
       is_exam: $("fExam").checked,
     };
