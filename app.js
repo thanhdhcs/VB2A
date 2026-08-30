@@ -15,12 +15,7 @@
   // ---- Sample data used only when Supabase chưa cấu hình (xem thử giao diện) ----
   const DEMO_DATA = [
     { id: 1, position: 1, event_date: "2026-09-01", title: "Họp triển khai, phân công nhiệm vụ", progress: 100, is_exam: false },
-    { id: 2, position: 2, event_date: "2026-09-05", title: "Mời PA06 quét an ninh", progress: 100, is_exam: false },
-    { id: 3, position: 3, event_date: "2026-09-06", title: "Thử tải hệ thống (mới có 20% công việc)", progress: 20, is_exam: false },
-    { id: 4, position: 4, event_date: "2026-09-06", title: "Chuẩn bị phòng máy, thiết bị dự phòng", progress: 0, is_exam: false },
-    { id: 5, position: 5, event_date: "2026-09-08", title: "Tập huấn cán bộ coi thi", progress: 0, is_exam: false },
-    { id: 6, position: 6, event_date: "2026-09-09", title: "Rà soát danh sách thí sinh", progress: 0, is_exam: false },
-    { id: 7, position: 99, event_date: "2026-09-10", title: "Tổ chức kỳ thi chính thức", progress: 0, is_exam: true },
+    { id: 2, position: 99, event_date: "2026-09-10", title: "Tổ chức kỳ thi chính thức", progress: 0, is_exam: true },
   ];
 
   // ---------------- Init ----------------
