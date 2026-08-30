@@ -69,7 +69,7 @@
   async function load() {
     if (demo) { items = DEMO_DATA.slice(); render(); return; }
     setStatus("Đang tải…");
-    const { data, error } = await sb.from(TABLE).select("*").order("position", { ascending: true }).order("event_date", { ascending: true });
+    const { data, error } = await sb.from(TABLE).select("*").order("event_date", { ascending: true }).order("position", { ascending: true });
     if (error) { setStatus("Lỗi tải dữ liệu: " + error.message); console.error(error); return; }
     items = data || [];
     render();
@@ -105,7 +105,13 @@
 
   function render() {
     const tl = $("timeline");
-    const normal = items.filter(m => !m.is_exam);
+    // Sắp xếp theo NGÀY (mốc không ngày xuống cuối); cùng ngày thì theo position
+    const normal = items.filter(m => !m.is_exam).slice().sort((a, b) => {
+      const da = a.event_date || "9999-12-31";
+      const db = b.event_date || "9999-12-31";
+      if (da !== db) return da < db ? -1 : 1;
+      return (a.position || 0) - (b.position || 0);
+    });
     const exam = items.find(m => m.is_exam);
 
     // overall = trung bình % của các mốc thường
