@@ -62,7 +62,10 @@
   .node.doing .card{border-left-color:var(--blue)}
   .node.todo .card{border-left-color:var(--gray)}
   .card .date{font-size:12.5px;font-weight:800;color:var(--blue);letter-spacing:.3px}
-  .card .title{font-size:15.5px;font-weight:700;margin:3px 0 10px}
+  .card .title{font-size:15.5px;font-weight:700;margin:3px 0 8px}
+  .card .note{font-size:13px;color:var(--muted);background:#f6f8fb;border-left:3px solid #cdd6e4;
+       border-radius:0 8px 8px 0;padding:7px 10px;margin:0 0 10px;white-space:pre-wrap;word-break:break-word}
+  .card .note b{color:var(--navy)}
   .pbar{height:12px;border-radius:8px;background:#edf1f6;overflow:hidden}
   .pbar>i{display:block;height:100%;border-radius:8px;background:var(--blue);transition:width .5s}
   .node.done .pbar>i{background:var(--green)}
@@ -146,7 +149,7 @@
   <div class="timeline" id="timeline"></div>
 
   <footer>
-    Thanh·
+    Thanhkaka ·
     <span id="conn">chưa kết nối</span>
   </footer>
 
@@ -161,6 +164,11 @@
       <div class="field">
         <label>Nội dung công việc</label>
         <input type="text" id="fTitle" placeholder="VD: Mời PA06 quét an ninh" />
+      </div>
+      <div class="field">
+        <label>Note chi tiết (tùy chọn)</label>
+        <textarea id="fNote" rows="3" placeholder="Ghi chú chi tiết: người phụ trách, lưu ý, kết quả..."
+          style="width:100%;padding:10px 12px;border:1.5px solid #cdd6e4;border-radius:10px;font-size:14px;font-family:inherit;resize:vertical"></textarea>
       </div>
       <div class="field">
         <label>% Tiến độ</label>
